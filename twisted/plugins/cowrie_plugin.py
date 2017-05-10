@@ -44,6 +44,8 @@ from twisted.application import internet, service
 from twisted.cred import portal
 from twisted.internet import reactor
 from twisted.logger import ILogObserver, globalLogPublisher
+from twisted.conch.checkers import SSHPublicKeyChecker, InMemorySSHKeyDB
+from twisted.conch.ssh import keys
 
 from cowrie.core.config import readConfigFile
 from cowrie.core.utils import get_endpoints_from_section, create_endpoint_services
@@ -159,7 +161,7 @@ class CowrieServiceMaker(object):
             factory = cowrie.ssh.factory.CowrieSSHFactory(cfg)
             factory.tac = self
             factory.portal = portal.Portal(core.realm.HoneyPotRealm(cfg))
-            factory.portal.registerChecker(SSHPublicKeyChecker(InMemorySSHKeyDB({b'user': [keys.Key.fromFile('data/authorized_keys')]}))
+            factory.portal.registerChecker(SSHPublicKeyChecker(InMemorySSHKeyDB({b'richard': [keys.Key.fromFile('data/authorized_keys')]})))
             #factory.portal.registerChecker(
             #    core.checkers.HoneypotPublicKeyChecker())
             factory.portal.registerChecker(
