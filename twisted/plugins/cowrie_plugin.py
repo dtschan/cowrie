@@ -159,8 +159,9 @@ class CowrieServiceMaker(object):
             factory = cowrie.ssh.factory.CowrieSSHFactory(cfg)
             factory.tac = self
             factory.portal = portal.Portal(core.realm.HoneyPotRealm(cfg))
-            factory.portal.registerChecker(
-                core.checkers.HoneypotPublicKeyChecker())
+            factory.portal.registerChecker(SSHPublicKeyChecker(InMemorySSHKeyDB({b'user': [keys.Key.fromFile('data/authorized_keys')]}))
+            #factory.portal.registerChecker(
+            #    core.checkers.HoneypotPublicKeyChecker())
             factory.portal.registerChecker(
                 core.checkers.HoneypotPasswordChecker(cfg))
 
