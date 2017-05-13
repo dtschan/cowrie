@@ -14,6 +14,7 @@ except ImportError:
     from urlparse import urlparse
 
 from OpenSSL import SSL
+from base64 import b64encode
 
 from twisted.web import client
 from twisted.internet import reactor, ssl
@@ -34,8 +35,8 @@ class command_curl(HoneyPotCommand):
         """
         """
         try:
-            optlist, args = getopt.getopt(self.args, 'sho:O',
-                [ 'help', 'manual', 'silent' ] )
+            optlist, args = getopt.getopt(self.args, 'sho:Ou:',
+                [ 'help', 'manual', 'silent', 'user=' ] )
         except getopt.GetoptError as err:
             # TODO: should be 'unknown' instead of 'not recognized'
             self.write(b"curl: {}\n".format(err))
@@ -63,15 +64,18 @@ class command_curl(HoneyPotCommand):
         urldata = urlparse(url)
 
         outfile = None
+        user = None
         for opt in optlist:
             if opt[0] == '-o':
                 outfile = opt[1]
-            if opt[0] == '-O':
+            elif opt[0] == '-O':
                 outfile = urldata.path.split('/')[-1]
                 if outfile is None or not len(outfile.strip()) or not urldata.path.count('/'):
                     self.write(b'curl: Remote file name has no length!\n')
                     self.exit()
                     return
+            elif opt[0] == '-u' or opt[0] == '--user':
+                user = opt[1]
 
         if outfile:
             outfile = self.fs.resolve_path(outfile, self.protocol.cwd)
@@ -100,7 +104,12 @@ class command_curl(HoneyPotCommand):
                          re.sub('[^A-Za-z0-9]', '_', url))
             self.safeoutfile = os.path.join(self.download_path, tmp_fname)
 
-        self.deferred = self.download(url, outfile, self.safeoutfile)
+        if user:
+            headers = {b"authorization":  b"Basic " + b64encode(user)}
+        else:
+            headers = None
+
+        self.deferred = self.download(url, outfile, self.safeoutfile, headers=headers)
         if self.deferred:
             self.deferred.addCallback(self.success, outfile)
             self.deferred.addErrback(self.error, url)
